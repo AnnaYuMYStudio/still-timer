@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Still — Focus Timer</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100svh; display: grid; place-items: center; padding: 1.2rem; background: radial-gradient(ellipse at 50% 10%, #263b37, #121b1a 70%); color: #f5f4e9; font: 1rem system-ui, sans-serif; }
+  main { width: min(100%, 30rem); background: #1b2826; border: 1px solid #40534e; border-radius: 2rem; padding: clamp(1rem, 5vw, 2.5rem); box-shadow: 0 1.5rem 5rem #0005; text-align: center; }
+  h1 { margin: 0 0 .4rem; font: 3.5rem Georgia, serif; letter-spacing: -.06em; }
+  p { color: #b7c8bf; margin: 0 0 1.5rem; }
+  .modes, .actions { display: flex; justify-content: center; flex-wrap: wrap; gap: .5rem; }
+  button { font: inherit; cursor: pointer; border: 1px solid #526760; border-radius: 99rem; padding: .65rem .95rem; color: inherit; background: transparent; }
+  button:hover { background: #30453e; }
+  button:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+  button[aria-pressed="true"], #toggle { background: #c9efad; color: #17241c; border-color: #c9efad; }
+  #toggle { min-width: 8rem; font-weight: 650; }
+  .timer { --progress: 0turn; width: min(100%, 15rem); aspect-ratio: 1; margin: 1.75rem auto; border-radius: 50%; padding: .42rem; background: conic-gradient(#c9efad var(--progress), #354a43 0); display: grid; }
+  .face { border-radius: 50%; background: #1b2826; display: grid; place-content: center; gap: .35rem; }
+  #time { font-size: clamp(2.6rem, 12vw, 4rem); line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -.05em; }
+  #status { color: #b7c8bf; font-size: .9rem; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Still</h1>
+  <p>A timer for focus and breaks.</p>
+  <div class="modes" role="group" aria-label="Timer duration">
+    <button type="button" data-minutes="25" aria-pressed="true">Focus · 25m</button>
+    <button type="button" data-minutes="5" aria-pressed="false">Break · 5m</button>
+    <button type="button" data-minutes="15" aria-pressed="false">Long break · 15m</button>
+  </div>
+  <div class="timer">
+    <div class="face">
+      <div id="time" role="timer">25:00</div>
+      <div id="status" role="status">Ready</div>
+    </div>
+  </div>
+  <div class="actions">
+    <button type="button" id="toggle">Start</button>
+    <button type="button" id="reset">Reset</button>
+  </div>
+</main>
+<script>
+  const modes = document.querySelectorAll('[data-minutes]');
+  const timer = document.querySelector('.timer');
+  const time = document.querySelector('#time');
+  const status = document.querySelector('#status');
+  const toggle = document.querySelector('#toggle');
+  let duration = Number(modes[0].dataset.minutes) * 60000;
+  let remaining = duration;
+  let deadline = null;
+  let interval = null;
+
+  function render() {
+    const seconds = Math.ceil(remaining / 1000);
+    const minutesText = String(Math.floor(seconds / 60)).padStart(2, '0');
+    time.textContent = minutesText + ':' + String(seconds % 60).padStart(2, '0');
+    timer.style.setProperty('--progress', (1 - remaining / duration) + 'turn');
+  }
+
+  function stop() {
+    clearInterval(interval);
+    interval = null;
+    deadline = null;
+  }
+
+  function reset() {
+    stop();
+    remaining = duration;
+    status.textContent = 'Ready';
+    toggle.textContent = 'Start';
+    render();
+  }
+
+  function tick() {
+    if (deadline === null) return;
+    remaining = Math.max(0, deadline - Date.now());
+    if (remaining === 0) {
+      stop();
+      status.textContent = 'Session complete';
+      toggle.textContent = 'Start again';
+    }
+    render();
+  }
+
+  toggle.addEventListener('click', () => {
+    if (deadline !== null) {
+      tick();
+      if (deadline === null) return;
+      stop();
+      status.textContent = 'Paused';
+      toggle.textContent = 'Resume';
+      return;
+    }
+
+    if (remaining === 0) remaining = duration;
+    deadline = Date.now() + remaining;
+    status.textContent = 'Running';
+    toggle.textContent = 'Pause';
+    interval = setInterval(tick, 100);
+    tick();
+  });
+
+  document.querySelector('#reset').addEventListener('click', reset);
+  document.addEventListener('visibilitychange', tick);
+  modes.forEach(mode => mode.addEventListener('click', () => {
+    if (mode.getAttribute('aria-pressed') === 'true') return;
+    modes.forEach(button => button.setAttribute('aria-pressed', String(button === mode)));
+    duration = Number(mode.dataset.minutes) * 60000;
+    reset();
+  }));
+</script>
+</body>
+</html>
