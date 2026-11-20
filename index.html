@@ -55,6 +55,35 @@
   let remaining = duration;
   let deadline = null;
   let interval = null;
+  let audioContext;
+
+  async function prepareAudio() {
+    try {
+      audioContext ??= new AudioContext();
+      await audioContext.resume();
+    } catch {
+      // The visual timer still works when browser audio is unavailable.
+    }
+  }
+
+  function playChime() {
+    if (audioContext?.state !== 'running') return;
+
+    const now = audioContext.currentTime;
+    [523.25, 659.25, 783.99].forEach((frequency, index) => {
+      const start = now + index * .14;
+      const tone = audioContext.createOscillator();
+      const volume = audioContext.createGain();
+      tone.frequency.value = frequency;
+      volume.gain.setValueAtTime(0, start);
+      volume.gain.linearRampToValueAtTime(.16, start + .02);
+      volume.gain.exponentialRampToValueAtTime(.001, start + .35);
+      tone.connect(volume);
+      volume.connect(audioContext.destination);
+      tone.start(start);
+      tone.stop(start + .36);
+    });
+  }
 
   function render() {
     const seconds = Math.ceil(remaining / 1000);
@@ -84,6 +113,7 @@
       stop();
       status.textContent = 'Session complete';
       toggle.textContent = 'Start again';
+      playChime();
     }
     render();
   }
@@ -98,6 +128,7 @@
       return;
     }
 
+    void prepareAudio();
     if (remaining === 0) remaining = duration;
     deadline = Date.now() + remaining;
     status.textContent = 'Running';
