@@ -10,8 +10,11 @@
   main { width: min(100%, 30rem); background: #1b2826; border: 1px solid #40534e; border-radius: 2rem; padding: clamp(1rem, 5vw, 2.5rem); box-shadow: 0 1.5rem 5rem #0005; text-align: center; }
   h1 { margin: 0 0 .4rem; font: 3.5rem Georgia, serif; letter-spacing: -.06em; }
   p { color: #b7c8bf; margin: 0 0 1.5rem; }
-  .modes, .actions { display: flex; justify-content: center; flex-wrap: wrap; gap: .5rem; }
+  .modes, .actions { display: flex; justify-content: center; gap: .5rem; }
+  .actions { flex-wrap: wrap; }
+  .modes { justify-content: safe center; overflow-x: auto; padding: .35rem; margin-inline: -.35rem; }
   button { font: inherit; cursor: pointer; border: 1px solid #526760; border-radius: 99rem; padding: .65rem .95rem; color: inherit; background: transparent; }
+  .modes button { flex: none; white-space: nowrap; font-size: clamp(.875rem, 3.5vw, 1rem); padding-inline: clamp(.35rem, 1.7vw, .7rem); }
   button:hover { background: #30453e; }
   button:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
   button[aria-pressed="true"], #toggle { background: #c9efad; color: #17241c; border-color: #c9efad; }
